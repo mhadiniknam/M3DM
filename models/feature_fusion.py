@@ -6,6 +6,7 @@ class Mlp(nn.Module):
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.):
         super().__init__()
         out_features = out_features or in_features
+        # یکی دیگه از عملگر های اوپریشنال شبیه همون سفینه فضایی 
         hidden_features = hidden_features or in_features
         self.fc1 = nn.Linear(in_features, hidden_features)
         self.act = act_layer()
@@ -54,19 +55,30 @@ class FeatureFusionBlock(nn.Module):
         # gather all targets
         # Einstein sum is more intuitive
         logits = torch.einsum('nc,mc->nm', [q, k]) / self.T
+        # لاجیت چیه ؟ وزن های مدل شبکه عصبی که هنوز نرفتن توی سافت مکس  تا نورمالایز بشن 
+        # این Einstein Multipication 
+        # اینطوریه که اگر ورودی با ابعاد ان سی یا ام سی داشتیم خروجی باید ان ام باشه و این خودش میاد ضرب داخلی رو میسازه
         N = logits.shape[0]  # batch size per GPU
+        # توی مثالی هم که داخل صفحه پایتورچ هست میاد یه جورایی شبیه این 
+        # و دقیقا هم وقتی می خوان ضرب بچ وایز انجام بدن مثلا میان از همون ضرب انیشتین استفاده می کنن
+        # torch.einsum("bij , bjk ->bik",x,y)
         labels = (torch.arange(N, dtype=torch.long) + N * torch.distributed.get_rank()).cuda()
+        # get_rank() -> انگار میاد ترتیبی برای پروسس ها میده به 
+        # این فکر می کنم تلاشش اینه که بیاد لیبل های یونیک درست 
         return nn.CrossEntropyLoss()(logits, labels) * (2 * self.T)
+        # چرا اینجا ور می داره یه 2 و تی ضرب می کنه ؟
+        # به نظر میاد یکی از متد ها هست : تی خودش یه جورایی نقش تمپرچر رو داره و حتی یه جورایی نقش اسکیل کردن رو هم داره 
 
     def reparameterize(self, mu, logvar):
         """
-        Will a single z be enough ti compute the expectation
+        Will a single z be enough to compute the expectation
         for the loss??
         :param mu: (Tensor) Mean of the latent Gaussian
         :param logvar: (Tensor) Standard deviation of the latent Gaussian
         :return:
         """
         std = torch.exp(0.5 * logvar)
+        # اینجا هم ور میداره یه نتسور درست می کنه که هر کدوم از اعضاش توان خواسته از نپرن
         eps = torch.randn_like(std)
         return eps * std + mu
 

@@ -27,6 +27,7 @@ class GroundTruthComponent:
                             component as numpy array.
         """
         # Keep a sorted list of all anomaly scores within the component.
+        # دقت کن که یکیش عدده یکیش لیست برای همینه که از کپی استفاده میکنه
         self.anomaly_scores = anomaly_scores.copy()
         self.anomaly_scores.sort()
 
@@ -49,6 +50,8 @@ class GroundTruthComponent:
         """
         if self.last_threshold is not None:
             assert self.last_threshold <= threshold
+        # اینجا از یک ساختار خاصی پیروی میکنه assert 
+        # اینجا ازرت میاد اگر عبارت جلوش درست بود هیچی نمیشه : اگر خطا بود یک ارور ریپورت خواهد داشت
 
         # Increase the index until it points to an anomaly score that is just above the specified threshold.
         while (self.index < len(self.anomaly_scores) and self.anomaly_scores[self.index] <= threshold):
@@ -59,6 +62,7 @@ class GroundTruthComponent:
 
 
 def trapezoid(x, y, x_max=None):
+    # اینجا عملا داره تلاش میکنه برای محاسبه ای یو سی از انتگرال ذوزنقه ای استفاده مکنه 
     """
     This function calculates the definit integral of a curve given by x- and corresponding y-values.
     In contrast to, e.g., 'numpy.trapz()', this function allows to define an upper bound to the integration range by
@@ -82,11 +86,12 @@ def trapezoid(x, y, x_max=None):
     y = np.array(y)
     finite_mask = np.logical_and(np.isfinite(x), np.isfinite(y))
     if not finite_mask.all():
+        # این  آل که نوشته اینجا میاد روی یک آرایه نامپای اعمال میشه میگه که آیا همه اعضاش غیر صفر است
         print(
             """WARNING: Not all x and y values passed to trapezoid are finite. Will continue with only the finite values.""")
     x = x[finite_mask]
     y = y[finite_mask]
-
+    # و اینجا هم به زیبایی حذفشون میکنه
     # Introduce a correction term if max_x is not an element of x.
     correction = 0.
     if x_max is not None:
@@ -99,9 +104,11 @@ def trapezoid(x, y, x_max=None):
             # Calculate the correction term which is the integral between the last x[ins-1] and x_max. Since we do not
             # know the exact value of y at x_max, we interpolate between y[ins] and y[ins-1].
             y_interp = y[ins - 1] + ((y[ins] - y[ins - 1]) * (x_max - x[ins - 1]) / (x[ins] - x[ins - 1]))
-            correction = 0.5 * (y_interp + y[ins - 1]) * (x_max - x[ins - 1])
+            correction = 0.5 * (y_interp + y[ins - 1]) * (x_max - x[ins - 1]) 
 
         # Cut off at x_max.
+        # make an array that is either True or False it's true it the following condition is true
+        # x <= x_max
         mask = x <= x_max
         x = x[mask]
         y = y[mask]
